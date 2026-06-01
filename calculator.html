@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Calculator</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@300;400;500&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#0c0c10;
+  --bg2:#12121a;
+  --surface:#18181f;
+  --surface2:#1f1f2a;
+  --border:rgba(255,255,255,.06);
+  --accent:#e8ff5a;
+  --accent-dim:rgba(232,255,90,.12);
+  --accent-glow:rgba(232,255,90,.25);
+  --text:#f0f0f8;
+  --text2:#6b6b80;
+  --text3:#3a3a50;
+  --red:#ff6b6b;
+  --blue:#6bb5ff;
+  --radius:16px;
+}
+
+html,body{
+  height:100%;
+  background:var(--bg);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-family:'Outfit',sans-serif;
+  overflow:hidden;
+}
+
+/* Background grid */
+body::before{
+  content:'';
+  position:fixed;inset:0;
+  background-image:
+    linear-gradient(rgba(232,255,90,.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(232,255,90,.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+}
+
+body::after{
+  content:'';
+  position:fixed;
+  width:500px;height:500px;
+  border-radius:50%;
+  background:radial-gradient(circle, rgba(232,255,90,.06) 0%, transparent 70%);
+  top:50%;left:50%;
+  transform:translate(-50%,-50%);
+  pointer-events:none;
+}
+
+.wrapper{
+  position:relative;
+  z-index:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:1.5rem;
+}
+
+.label{
+  font-size:.7rem;
+  font-weight:600;
+  letter-spacing:.2em;
+  text-transform:uppercase;
+  color:var(--text2);
+}
+
+.calc{
+  width:340px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:28px;
+  overflow:hidden;
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,.04),
+    0 40px 80px rgba(0,0,0,.6),
+    0 0 60px rgba(232,255,90,.04);
+}
+
+/* DISPLAY */
+.display{
+  padding:1.75rem 1.75rem 1.25rem;
+  background:var(--surface);
+  border-bottom:1px solid var(--border);
+  position:relative;
+  min-height:140px;
+  display:flex;
+  flex-direction:column;
+  justify-content:flex-end;
+}
+
+.display-history{
+  font-family:'DM Mono',monospace;
+  font-size:.78rem;
+  color:var(--text2);
+  min-height:22px;
+  text-align:right;
+  margin-bottom:.4rem;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.display-main{
+  font-family:'DM Mono',monospace;
+  font-size:2.8rem;
+  font-weight:300;
+  color:var(--text);
+  text-align:right;
+  line-height:1;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  transition:font-size .1s;
+}
+.display-main.small{font-size:2rem}
+.display-main.xsmall{font-size:1.4rem}
+
+.display-cursor{
+  display:inline-block;
+  width:2px;height:.8em;
+  background:var(--accent);
+  margin-left:3px;
+  vertical-align:middle;
+  animation:blink .9s infinite;
+}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+
+.display-mode{
+  position:absolute;
+  top:1rem;left:1.75rem;
+  font-size:.65rem;
+  font-weight:600;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--text3);
+}
+
+/* KEYPAD */
+.keypad{
+  padding:1.25rem;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:.65rem;
+}
+
+.key{
+  height:68px;
+  border-radius:var(--radius);
+  border:none;
+  cursor:pointer;
+  font-family:'Outfit',sans-serif;
+  font-size:1.1rem;
+  font-weight:500;
+  display:flex;align-items:center;justify-content:center;
+  transition:all .12s cubic-bezier(.4,0,.2,1);
+  position:relative;
+  overflow:hidden;
+  user-select:none;
+  -webkit-tap-highlight-color:transparent;
+}
+
+.key::before{
+  content:'';
+  position:absolute;inset:0;
+  background:white;
+  opacity:0;
+  transition:opacity .1s;
+}
+.key:active::before{opacity:.08}
+
+/* Number keys */
+.key-num{
+  background:var(--surface2);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+.key-num:hover{background:#242433;border-color:rgba(255,255,255,.1)}
+.key-num:active{transform:scale(.95)}
+
+/* Operator keys */
+.key-op{
+  background:rgba(107,181,255,.1);
+  color:var(--blue);
+  border:1px solid rgba(107,181,255,.15);
+}
+.key-op:hover{background:rgba(107,181,255,.18);border-color:rgba(107,181,255,.3)}
+.key-op:active{transform:scale(.95)}
+
+/* Function keys */
+.key-fn{
+  background:var(--surface);
+  color:var(--text2);
+  border:1px solid var(--border);
+  font-size:.9rem;
+}
+.key-fn:hover{background:var(--surface2);color:var(--text)}
+.key-fn:active{transform:scale(.95)}
+
+/* Equals key */
+.key-eq{
+  background:var(--accent);
+  color:#0c0c10;
+  font-weight:700;
+  font-size:1.4rem;
+  border:none;
+  box-shadow:0 4px 20px var(--accent-glow);
+}
+.key-eq:hover{
+  background:#eeff6a;
+  box-shadow:0 6px 28px rgba(232,255,90,.4);
+  transform:translateY(-1px);
+}
+.key-eq:active{transform:scale(.95) translateY(0)}
+
+/* Clear key */
+.key-clear{
+  background:rgba(255,107,107,.1);
+  color:var(--red);
+  border:1px solid rgba(255,107,107,.15);
+}
+.key-clear:hover{background:rgba(255,107,107,.18);border-color:rgba(255,107,107,.3)}
+.key-clear:active{transform:scale(.95)}
+
+/* Wide key (0) */
+.key-wide{
+  grid-column:span 2;
+}
+
+/* BOTTOM BAR */
+.bottom-bar{
+  padding:.75rem 1.25rem 1.25rem;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  border-top:1px solid var(--border);
+  margin-top:-.65rem;
+}
+.kb-hint{
+  font-size:.65rem;
+  color:var(--text3);
+  letter-spacing:.05em;
+}
+.kb-hint span{
+  display:inline-block;
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:4px;
+  padding:.1rem .35rem;
+  font-family:'DM Mono',monospace;
+  font-size:.62rem;
+  color:var(--text2);
+  margin:0 1px;
+}
+
+/* RESULT FLASH */
+@keyframes resultFlash{
+  0%{color:var(--accent)}
+  100%{color:var(--text)}
+}
+.display-main.flash{animation:resultFlash .4s ease-out}
+
+/* HISTORY PANEL */
+.history-panel{
+  width:340px;
+  background:var(--bg2);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:1rem 1.25rem;
+  max-height:160px;
+  overflow-y:auto;
+}
+.history-panel::-webkit-scrollbar{width:3px}
+.history-panel::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+.history-title{
+  font-size:.65rem;
+  font-weight:600;
+  letter-spacing:.15em;
+  text-transform:uppercase;
+  color:var(--text3);
+  margin-bottom:.75rem;
+  display:flex;justify-content:space-between;
+}
+.history-clear-btn{
+  background:none;border:none;cursor:pointer;
+  color:var(--text3);font-size:.65rem;
+  font-family:'Outfit',sans-serif;
+  transition:color .2s;
+}
+.history-clear-btn:hover{color:var(--red)}
+.history-entry{
+  display:flex;justify-content:space-between;align-items:center;
+  padding:.35rem 0;
+  border-bottom:1px solid var(--border);
+  cursor:pointer;
+  transition:all .15s;
+}
+.history-entry:last-child{border-bottom:none}
+.history-entry:hover .history-expr{color:var(--text)}
+.history-expr{font-family:'DM Mono',monospace;font-size:.78rem;color:var(--text2)}
+.history-result{font-family:'DM Mono',monospace;font-size:.82rem;color:var(--accent);font-weight:500}
+.history-empty{font-size:.78rem;color:var(--text3);text-align:center;padding:.5rem 0;font-style:italic}
+
+/* ERROR SHAKE */
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  20%{transform:translateX(-6px)}
+  40%{transform:translateX(6px)}
+  60%{transform:translateX(-4px)}
+  80%{transform:translateX(4px)}
+}
+.calc.shake{animation:shake .35s ease}
+
+@media(max-width:400px){
+  .calc,.history-panel{width:calc(100vw - 2rem)}
+}
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <div class="calc" id="calc">
+    <div class="display">
+      <div class="display-mode" id="mode">STANDARD</div>
+      <div class="display-history" id="history-display"></div>
+      <div class="display-main" id="main-display">0<span class="display-cursor"></span></div>
+    </div>
+
+    <div class="keypad">
+      <!-- Row 1 -->
+      <button class="key key-fn" onclick="inputFn('AC')" id="ac-btn">AC</button>
+      <button class="key key-fn" onclick="inputFn('+/-')">+/−</button>
+      <button class="key key-fn" onclick="inputFn('%')">%</button>
+      <button class="key key-op" onclick="inputOp('/')">÷</button>
+
+      <!-- Row 2 -->
+      <button class="key key-num" onclick="inputNum('7')">7</button>
+      <button class="key key-num" onclick="inputNum('8')">8</button>
+      <button class="key key-num" onclick="inputNum('9')">9</button>
+      <button class="key key-op" onclick="inputOp('*')">×</button>
+
+      <!-- Row 3 -->
+      <button class="key key-num" onclick="inputNum('4')">4</button>
+      <button class="key key-num" onclick="inputNum('5')">5</button>
+      <button class="key key-num" onclick="inputNum('6')">6</button>
+      <button class="key key-op" onclick="inputOp('-')">−</button>
+
+      <!-- Row 4 -->
+      <button class="key key-num" onclick="inputNum('1')">1</button>
+      <button class="key key-num" onclick="inputNum('2')">2</button>
+      <button class="key key-num" onclick="inputNum('3')">3</button>
+      <button class="key key-op" onclick="inputOp('+')">+</button>
+
+      <!-- Row 5 -->
+      <button class="key key-num key-wide" onclick="inputNum('0')">0</button>
+      <button class="key key-num" onclick="inputDot()">.</button>
+      <button class="key key-eq" onclick="calculate()">=</button>
+    </div>
+
+    <div class="bottom-bar">
+      <span class="kb-hint"><span>⌫</span> backspace &nbsp; <span>Esc</span> clear</span>
+      <span class="kb-hint" style="color:var(--accent);opacity:.6">⌨ keyboard ready</span>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="history-panel">
+    <div class="history-title">
+      History
+      <button class="history-clear-btn" onclick="clearHistory()">Clear all</button>
+    </div>
+    <div id="history-list"><div class="history-empty">No calculations yet</div></div>
+  </div>
+</div>
+
+<script>
+// ═══ STATE ═══
+let current = '0';
+let previous = '';
+let operator = null;
+let shouldReset = false;
+let history = [];
+let justCalculated = false;
+
+const mainDisplay = document.getElementById('main-display');
+const historyDisplay = document.getElementById('history-display');
+const acBtn = document.getElementById('ac-btn');
+const calcEl = document.getElementById('calc');
+
+// ═══ DISPLAY ═══
+function updateDisplay(val) {
+  // Format number
+  let display = val;
+  if (!isNaN(val) && val !== '' && !val.toString().includes('e')) {
+    const num = parseFloat(val);
+    if (!val.toString().includes('.') || val.toString().endsWith('.')) {
+      display = val;
+    } else {
+      display = parseFloat(val.toString()).toString();
+    }
+  }
+
+  // Remove cursor span, update text, re-add cursor
+  mainDisplay.innerHTML = display + '<span class="display-cursor"></span>';
+
+  // Size adjustment
+  mainDisplay.classList.remove('small','xsmall');
+  if (display.length > 12) mainDisplay.classList.add('xsmall');
+  else if (display.length > 8) mainDisplay.classList.add('small');
+
+  // AC / C toggle
+  acBtn.textContent = (current === '0' && !previous) ? 'AC' : 'C';
+}
+
+function updateHistoryDisplay() {
+  if (operator && previous) {
+    const opSymbol = {'+':'+','-':'−','*':'×','/':'÷'}[operator] || operator;
+    historyDisplay.textContent = previous + ' ' + opSymbol;
+  } else {
+    historyDisplay.textContent = '';
+  }
+}
+
+// ═══ INPUT ═══
+function inputNum(n) {
+  if (shouldReset || justCalculated) {
+    current = n;
+    shouldReset = false;
+    justCalculated = false;
+  } else {
+    if (current === '0' && n !== '.') current = n;
+    else if (current.length >= 16) return;
+    else current += n;
+  }
+  updateDisplay(current);
+  updateHistoryDisplay();
+}
+
+function inputDot() {
+  if (shouldReset || justCalculated) {
+    current = '0.';
+    shouldReset = false;
+    justCalculated = false;
+  } else if (!current.includes('.')) {
+    current += '.';
+  }
+  updateDisplay(current);
+}
+
+function inputOp(op) {
+  if (operator && !shouldReset && !justCalculated) {
+    calculate(true); // chain calculation
+  }
+  previous = current;
+  operator = op;
+  shouldReset = true;
+  justCalculated = false;
+  updateHistoryDisplay();
+}
+
+function inputFn(fn) {
+  if (fn === 'AC') {
+    current = '0'; previous = ''; operator = null; shouldReset = false; justCalculated = false;
+    historyDisplay.textContent = '';
+  } else if (fn === 'C') {
+    current = '0'; shouldReset = false;
+  } else if (fn === '+/-') {
+    current = (parseFloat(current) * -1).toString();
+  } else if (fn === '%') {
+    current = (parseFloat(current) / 100).toString();
+  }
+  updateDisplay(current);
+  updateHistoryDisplay();
+}
+
+function backspace() {
+  if (shouldReset || justCalculated) return;
+  if (current.length > 1) current = current.slice(0, -1);
+  else current = '0';
+  updateDisplay(current);
+}
+
+function calculate(chained = false) {
+  if (!operator || !previous) return;
+
+  const a = parseFloat(previous);
+  const b = parseFloat(current);
+  let result;
+
+  switch (operator) {
+    case '+': result = a + b; break;
+    case '-': result = a - b; break;
+    case '*': result = a * b; break;
+    case '/':
+      if (b === 0) { showError('Cannot divide by zero'); return; }
+      result = a / b;
+      break;
+    default: return;
+  }
+
+  // Round floating point issues
+  result = parseFloat(result.toPrecision(12));
+
+  const opSymbol = {'+':'+','-':'−','*':'×','/':'÷'}[operator];
+  const expr = previous + ' ' + opSymbol + ' ' + current;
+
+  if (!chained) {
+    // Add to history
+    addHistory(expr, result.toString());
+    historyDisplay.textContent = expr + ' =';
+    justCalculated = true;
+    mainDisplay.classList.add('flash');
+    setTimeout(() => mainDisplay.classList.remove('flash'), 400);
+  }
+
+  current = result.toString();
+  if (!chained) operator = null;
+  previous = result.toString();
+  shouldReset = true;
+  updateDisplay(current);
+}
+
+// ═══ HISTORY ═══
+function addHistory(expr, result) {
+  history.unshift({ expr, result });
+  if (history.length > 20) history.pop();
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  if (!history.length) {
+    list.innerHTML = '<div class="history-empty">No calculations yet</div>';
+    return;
+  }
+  list.innerHTML = history.map((h, i) =>
+    `<div class="history-entry" onclick="recallHistory(${i})">
+      <span class="history-expr">${h.expr}</span>
+      <span class="history-result">= ${h.result}</span>
+    </div>`
+  ).join('');
+}
+
+function recallHistory(i) {
+  current = history[i].result;
+  justCalculated = true;
+  shouldReset = false;
+  updateDisplay(current);
+}
+
+function clearHistory() {
+  history = [];
+  renderHistory();
+}
+
+// ═══ ERROR ═══
+function showError(msg) {
+  mainDisplay.innerHTML = msg + '<span class="display-cursor"></span>';
+  mainDisplay.classList.add('xsmall');
+  calcEl.classList.add('shake');
+  setTimeout(() => calcEl.classList.remove('shake'), 400);
+  setTimeout(() => {
+    current = '0'; previous = ''; operator = null; shouldReset = false;
+    updateDisplay('0');
+    mainDisplay.classList.remove('xsmall');
+    historyDisplay.textContent = '';
+  }, 1500);
+}
+
+// ═══ KEYBOARD ═══
+document.addEventListener('keydown', e => {
+  if (e.key >= '0' && e.key <= '9') inputNum(e.key);
+  else if (e.key === '.') inputDot();
+  else if (e.key === '+') inputOp('+');
+  else if (e.key === '-') inputOp('-');
+  else if (e.key === '*') inputOp('*');
+  else if (e.key === '/') { e.preventDefault(); inputOp('/'); }
+  else if (e.key === 'Enter' || e.key === '=') calculate();
+  else if (e.key === 'Backspace') backspace();
+  else if (e.key === 'Escape') inputFn('AC');
+  else if (e.key === '%') inputFn('%');
+});
+
+// ═══ INIT ═══
+updateDisplay('0');
+renderHistory();
+</script>
+</body>
+</html>
