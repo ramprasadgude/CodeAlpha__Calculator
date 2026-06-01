@@ -1,2 +1,2 @@
 # CodeAlpha__Calculator
-An interactive calculator project showcasing front-end development skills using HTML, CSS, and JavaScript, with support for basic mathematical operations and responsive UI design.
+A responsive calculator application built with HTML, CSS, and JavaScript, featuring basic arithmetic operations, real-time input handling, and a clean user-friendly interface.
